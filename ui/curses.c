@@ -517,20 +517,36 @@ static void mtr_curses_hosts(
                     printw(fmt_ipinfo(ctl, addrs));
 #endif
               
+            labal_index = search_from_given_IP_list(strlongip(ctl, addrs));
+         	if(labal_index!= -1){
+         		attron(COLOR_PAIR(2));
+            	if (name != NULL) {
+                	if (ctl->show_ips)
+                    	printw("%s (%s)\t%s", name, strlongip(ctl, addrs),address_list[labal_index].labal);
+                	else
+                    	printw("%s\t%s",name,address_list[labal_index].labal);
+            	} else {
+                	printw("%s\t%s", strlongip(ctl, addrs),address_list[labal_index].labal);
+            	}
+            	attroff(COLOR_PAIR(2));
+        	} else{
+            	if (name != NULL) {
+                	if (ctl->show_ips)
+                    	printw("%s (%s)", name, strlongip(ctl, addrs));
+                	else
+                    	printw("%s",name);
+            	} else {
+                	printw("%s", strlongip(ctl, addrs));
+            	}        		
+        	}
 
-                if (name != NULL) {
-                    if (ctl->show_ips)
-                        printw("%s (%s)", name, strlongip(ctl, addrs));
-                    else
-                        printw("%s", name);
-                } else {
-                    printw("%s", strlongip(ctl, addrs));
-                }
                 for (k = 0; k < mplss->labels && ctl->enablempls; k++) {
                     printw("\n    [MPLS: Lbl %lu TC %u S %u TTL %u]",
                            mplss->label[k], mplss->tc[k], mplss->s[k],
                            mplss->ttl[k]);
                 }
+
+
                 attroff(A_BOLD);
             }
         } else {
