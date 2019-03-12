@@ -18,6 +18,9 @@
 
 #include "config.h"
 
+#include "plugin.h"
+#include <string.h>
+
 #include "mtr.h"
 
 #include <strings.h>
@@ -410,6 +413,7 @@ static void mtr_curses_hosts(
     int err;
     int y;
     char *name;
+    int labal_index;
 
     int i, j, k;
     int hd_len;
@@ -435,14 +439,36 @@ static void mtr_curses_hosts(
             if (is_printii(ctl))
                 printw(fmt_ipinfo(ctl, addr));
 #endif
-            if (name != NULL) {
-                if (ctl->show_ips)
-                    printw("%s (%s)", name, strlongip(ctl, addr));
-                else
-                    printw("%s", name);
-            } else {
-                printw("%s", strlongip(ctl, addr));
-            }
+
+           /*Here, it is required to search for the IP in given list of IP but since it
+			* is not sorted, fastest way is iterative search. The search can be make faster
+			* through multithreading. But there's only 18 values and new thread creation
+			* will be an extra overhead than searching. 
+            */
+
+            labal_index = search_from_given_IP_list(strlongip(ctl, addr));
+         	if(labal_index!= -1){
+         		attron(COLOR_PAIR(2));
+            	if (name != NULL) {
+                	if (ctl->show_ips)
+                    	printw("%s (%s)\t%s", name, strlongip(ctl, addr),address_list[labal_index].labal);
+                	else
+                    	printw("%s\t%s",name,address_list[labal_index].labal);
+            	} else {
+                	printw("%s\t%s", strlongip(ctl, addr),address_list[labal_index].labal);
+            	}
+            	attroff(COLOR_PAIR(2));
+        	} else{
+            	if (name != NULL) {
+                	if (ctl->show_ips)
+                    	printw("%s (%s)", name, strlongip(ctl, addr));
+                	else
+                    	printw("%s",name);
+            	} else {
+                	printw("%s", strlongip(ctl, addr));
+            	}        		
+        	}
+
             attroff(A_BOLD);
 
             getyx(stdscr, y, __unused_int);
@@ -490,6 +516,8 @@ static void mtr_curses_hosts(
                 if (is_printii(ctl))
                     printw(fmt_ipinfo(ctl, addrs));
 #endif
+              
+
                 if (name != NULL) {
                     if (ctl->show_ips)
                         printw("%s (%s)", name, strlongip(ctl, addrs));
@@ -673,6 +701,15 @@ static void mtr_curses_graph(
     }
 }
 
+int search_from_given_IP_list(
+    char * targetAddress){
+    int itr;
+
+    for(itr = 0; itr < 18; itr++) {
+    	if(!strcmp(address_list[itr].address, targetAddress)) return itr;
+    }
+    return -1;
+    }
 
 void mtr_curses_redraw(
     struct mtr_ctl *ctl)
